@@ -1,0 +1,128 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Base styles */
+html, body, #__next { height: 100%; }
+html { scroll-behavior: smooth; }
+
+/* Light blue theme accents */
+::selection { background-color: #A4D3FF; color: #0f172a; }
+
+/* Glassy button utility */
+.btn-glass {
+  @apply border border-zinc-800/80 bg-zinc-900/60 backdrop-blur rounded-xl text-zinc-200 shadow-sm hover:bg-zinc-900/80 transition-colors;
+}
+
+/* Gradient primary button (blue/gold) */
+.btn-gradient {
+  background-image: linear-gradient(135deg, #00B8FF, #00B8FF 50%, #FFD25A);
+  @apply text-zinc-900 font-semibold shadow-glow;
+}
+.btn-gradient:hover { filter: brightness(1.05); }
+
+/* Soft glow shadow utility used across buttons/cards */
+.shadow-glow {
+  box-shadow:
+    0 8px 24px rgba(0, 184, 255, 0.12),
+    0 3px 10px rgba(0, 0, 0, 0.35);
+}
+.theme-light .shadow-glow {
+  box-shadow:
+    0 8px 24px rgba(0, 184, 255, 0.18),
+    0 3px 10px rgba(0, 0, 0, 0.1);
+}
+
+/* Theme light override (basic) */
+.theme-light {
+  --bg-from: #fafafa;
+  --bg-to: #f0f0f0;
+  --text: #1f2937;
+}
+.theme-light body, .theme-light #__taliyo_root {
+  color: var(--text);
+  background: linear-gradient(135deg, #ffffff, #f3f4f6) !important;
+}
+
+/* Light theme overrides for common Tailwind utilities used across the app */
+.theme-light .bg-gradient-to-tr { background-image: linear-gradient(to top right, #ffffff, #f3f4f6) !important; }
+.theme-light .bg-zinc-950 { background-color: #ffffff !important; }
+.theme-light .bg-zinc-900 { background-color: #f3f4f6 !important; }
+.theme-light .bg-zinc-950\/90 { background-color: rgba(255,255,255,0.9) !important; }
+.theme-light .bg-zinc-900\/80 { background-color: rgba(243,244,246,0.8) !important; }
+.theme-light .bg-zinc-900\/60 { background-color: rgba(243,244,246,0.6) !important; }
+.theme-light .text-zinc-100, .theme-light .text-zinc-200, .theme-light .text-zinc-300 { color: #111827 !important; }
+.theme-light .border-zinc-800, .theme-light .border-zinc-700 { border-color: #e5e7eb !important; }
+.theme-light .btn-glass { border-color: #e5e7eb !important; background-color: rgba(255,255,255,0.7) !important; color: #1f2937 !important; }
+.theme-light .btn-glass:hover { background-color: rgba(255,255,255,0.85) !important; }
+
+/* Dim theme: slightly brighter than dark with softer borders */
+.theme-dim {
+  --dim-bg-950: #0f1115;
+  --dim-bg-900: #141821;
+  --dim-text: #e5e7eb;
+  --dim-border: #30343a;
+}
+.theme-dim body {
+  color: var(--dim-text);
+}
+.theme-dim .bg-zinc-950 { background-color: var(--dim-bg-950) !important; }
+.theme-dim .bg-zinc-900 { background-color: var(--dim-bg-900) !important; }
+.theme-dim .text-zinc-100 { color: var(--dim-text) !important; }
+.theme-dim .border-zinc-800 { border-color: var(--dim-border) !important; }
+
+/* High-contrast theme: near black background, sharp borders, strong text */
+.theme-hc {
+  --hc-bg: #000000;
+  --hc-surface: #0a0a0a;
+  --hc-text: #ffffff;
+  --hc-border: #ffffff;
+}
+.theme-hc .bg-zinc-950 { background-color: var(--hc-surface) !important; }
+.theme-hc .bg-zinc-900 { background-color: #111111 !important; }
+.theme-hc .text-zinc-100, .theme-hc .text-zinc-200, .theme-hc .text-zinc-300 { color: var(--hc-text) !important; }
+.theme-hc .border-zinc-800, .theme-hc .border-zinc-700 { border-color: var(--hc-border) !important; }
+.theme-hc .btn-gradient { filter: contrast(1.2) brightness(1.1); }
+
+/* Smooth theme transitions */
+html, body, #__taliyo_root, .theme-light *, .theme-dim *, .theme-hc * {
+  transition: background-color .18s ease, color .18s ease, border-color .18s ease;
+}
+
+/* Unique, theme-aware scrollbar */
+.scroll-unique { 
+  scrollbar-width: thin; /* Firefox */
+  scrollbar-color: #52525b transparent;
+  -webkit-overflow-scrolling: touch; /* iOS momentum */
+}
+.scroll-unique::-webkit-scrollbar { width: 10px; }
+.scroll-unique::-webkit-scrollbar-track {
+  background: linear-gradient(180deg, rgba(39,39,42,0.6), rgba(24,24,27,0.6));
+  border-radius: 9999px;
+  margin: 4px;
+}
+.scroll-unique::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #00B8FF, #FFD25A);
+  border-radius: 9999px;
+  border: 2px solid rgba(24,24,27,0.6);
+}
+.scroll-unique::-webkit-scrollbar-thumb:hover { filter: brightness(1.1); }
+.scroll-unique::-webkit-scrollbar-corner { background: transparent; }
+
+/* Light theme adjustments for scrollbar */
+.theme-light .scroll-unique { scrollbar-color: #9ca3af #f3f4f6; }
+.theme-light .scroll-unique::-webkit-scrollbar-track {
+  background: linear-gradient(180deg, #f5f5f5, #e5e7eb);
+}
+.theme-light .scroll-unique::-webkit-scrollbar-thumb {
+  border-color: rgba(255,255,255,0.8);
+}
+
+/* Hide native scrollbar but keep scroll functionality */
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
+
+/* Respect reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition: none !important; animation: none !important; }
+}
