@@ -1,10 +1,11 @@
 import base64
-from fastapi import APIRouter, Response, UploadFile, File, Form
+from fastapi import APIRouter, Response, UploadFile, File, Form, Depends
 from fastapi.responses import StreamingResponse
 from fastapi.concurrency import run_in_threadpool
 import google.generativeai as genai
 
 from app.core.config import settings
+from app.core.auth import require_auth
 from app.models.schema import (
     ChatRequest,
     ChatResponse,
@@ -28,7 +29,7 @@ from app.repositories.chat_repo import (
     delete_conversation,
 )
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(require_auth)])
 
 
 @router.post("/chat", response_model=ChatResponse)

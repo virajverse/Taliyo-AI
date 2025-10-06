@@ -4,6 +4,32 @@ const baseURL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://127.0.0.1:8000";
 
 const api = axios.create({ baseURL });
 
+// Attach Authorization header if token exists
+api.interceptors.request.use((config) => {
+  if (typeof window !== 'undefined') {
+    try {
+      const t = localStorage.getItem('taliyo_token');
+      if (t) {
+        config.headers = config.headers || {};
+        config.headers.Authorization = `Bearer ${t}`;
+      }
+    } catch {}
+  }
+  return config;
+});
+
+// Redirect to /login on 401
+api.interceptors.response.use(
+  (res) => res,
+  (error) => {
+    if (error?.response?.status === 401 && typeof window !== 'undefined') {
+      try { localStorage.removeItem('taliyo_token'); } catch {}
+      try { window.location.href = '/login'; } catch {}
+    }
+    return Promise.reject(error);
+  }
+);
+
 export async function health() {
   const { data } = await api.get("/health");
   return data; // { status: "ok" }
@@ -85,6 +111,16 @@ export async function ingestPdf(file, userKey) {
   if (userKey) form.append("user_key", userKey);
   const { data } = await api.post("/rag/ingest_pdf", form);
   return data; // { ok, chunks, doc_id }
+}
+
+export async function login(passcode) {
+  const { data } = await api.post('/auth/login', { passcode });
+  return data; // { token, expires_at }
+}
+
+export async function verifyAuth() {
+  const { data } = await api.get('/auth/verify');
+  return data; // { ok: true }
 }
 
 export default api;

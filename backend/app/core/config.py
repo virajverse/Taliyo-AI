@@ -66,5 +66,10 @@ class Settings:
         # Output format preset (e.g., mp3_44100_128, mp3_44100_64)
         self.ELEVENLABS_OUTPUT: str = os.getenv("ELEVENLABS_OUTPUT", "mp3_44100_128")
 
+        # Simple Auth (passcode + JWT)
+        self.AUTH_PASSCODE: str = os.getenv("AUTH_PASSCODE", "")
+        self.JWT_SECRET: str = os.getenv("JWT_SECRET", "change-me")
+        self.JWT_EXPIRES_MIN: int = int(os.getenv("JWT_EXPIRES_MIN", "10080"))
+
 
 settings = Settings()

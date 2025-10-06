@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
 from app.api.routes import router as api_router
+from app.api.auth_routes import router as auth_router
 from app.repositories.chat_repo import init_indexes
 from app.services.rag_service import ensure_rag_indexes
 from app.services.memory_service import ensure_memory_indexes
@@ -27,6 +28,7 @@ def health():
 
 # API routes
 app.include_router(api_router)
+app.include_router(auth_router)
 
 
 @app.on_event("startup")

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { sendMessage as apiSendMessage, sendVoice as apiSendVoice, listConversations as apiListConversations, getConversation as apiGetConversation, deleteConversation as apiDeleteConversation, summarizeImage as apiSummarizeImage, askAboutFile as apiAskAboutFile, ingestPdf as apiIngestPdf, health as apiHealth } from "./lib/api";
+import { sendMessage as apiSendMessage, sendVoice as apiSendVoice, listConversations as apiListConversations, getConversation as apiGetConversation, deleteConversation as apiDeleteConversation, summarizeImage as apiSummarizeImage, askAboutFile as apiAskAboutFile, ingestPdf as apiIngestPdf, health as apiHealth, verifyAuth as apiVerifyAuth } from "./lib/api";
 import ChatMessage from "./components/ChatMessage";
 import Sidebar from "./components/Sidebar";
 import Hero from "./components/Hero";
@@ -10,8 +10,10 @@ import Toolbar from "./components/Toolbar";
 import RightPanel from "./components/RightPanel";
 import ThemeToggle from "./components/ThemeToggle";
 import { AnimatePresence, motion } from "framer-motion";
+import { useRouter } from "next/navigation";
 
 export default function Home() {
+  const router = useRouter();
   const [messages, setMessages] = useState([
     { role: "assistant", content: "Hi, I'm Taliyo AI. How can I help you today?", ts: Date.now() },
   ]);
@@ -53,6 +55,21 @@ export default function Home() {
   const [ingesting, setIngesting] = useState(false);
   const [ingestInfo, setIngestInfo] = useState(null); // { ok, chunks, doc_id } or { error }
   const [webSearch, setWebSearch] = useState(false);
+
+  // Verify auth on load; if unauthorized, redirect to /login
+  useEffect(() => {
+    let mounted = true;
+    const check = async () => {
+      try {
+        await apiVerifyAuth();
+      } catch {
+        if (!mounted) return;
+        try { router.replace('/login'); } catch {}
+      }
+    };
+    check();
+    return () => { mounted = false; };
+  }, [router]);
 
   useEffect(() => {
     const t = setTimeout(() => setShowSplash(false), 1000);
