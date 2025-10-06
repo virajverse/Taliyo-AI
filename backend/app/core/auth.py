@@ -45,3 +45,12 @@ async def require_auth(authorization: Optional[str] = Header(default=None)) -> D
     token = authorization.split(" ", 1)[1].strip()
     claims = decode_token(token)
     return claims
+
+
+async def require_admin(authorization: Optional[str] = Header(default=None)) -> Dict[str, Any]:
+    """Strict guard for admin APIs: always require Bearer token even if passcode is disabled."""
+    if not authorization or not authorization.lower().startswith("bearer "):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing credentials")
+    token = authorization.split(" ", 1)[1].strip()
+    claims = decode_token(token)
+    return claims

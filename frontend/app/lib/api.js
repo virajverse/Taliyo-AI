@@ -123,4 +123,175 @@ export async function verifyAuth() {
   return data; // { ok: true }
 }
 
+// ---------------- Admin APIs ----------------
+export async function adminHealth() {
+  const { data } = await api.get('/admin/health');
+  return data;
+}
+
+export async function adminListDocs(limit = 100, skip = 0) {
+  const { data } = await api.get('/admin/docs', { params: { limit, skip } });
+  return data; // { items: [...] }
+}
+
+export async function adminDeleteDoc(docId) {
+  const { data } = await api.delete(`/admin/docs/${docId}`);
+  return data; // { ok, deleted_chunks }
+}
+
+export async function adminSearchDocs(query, k = 5) {
+  const { data } = await api.get('/admin/docs/search', { params: { query, k } });
+  return data; // { hits: [...] }
+}
+
+export async function adminCrawl(urls) {
+  const { data } = await api.post('/admin/crawl', urls);
+  return data; // { results: [...] }
+}
+
+export async function adminListMemories(userKey, limit = 100) {
+  const { data } = await api.get('/admin/memories', { params: { user_key: userKey, limit } });
+  return data; // { profiles: [...], summaries: [...] }
+}
+
+export async function adminDeleteSummary(conversationId) {
+  const { data } = await api.delete(`/admin/memories/summary/${conversationId}`);
+  return data;
+}
+
+export async function adminDeleteProfile(userKey) {
+  const { data } = await api.delete(`/admin/memories/profile/${encodeURIComponent(userKey)}`);
+  return data;
+}
+
+export async function adminExportMemories(userKey) {
+  const { data } = await api.post('/admin/memories/export', null, { params: { user_key: userKey } });
+  return data;
+}
+
+export async function adminListChats(userKey, days = 30) {
+  const { data } = await api.get('/admin/chats', { params: { user_key: userKey, days } });
+  return data; // { items: [...] }
+}
+
+export async function adminChatDetail(conversationId) {
+  const { data } = await api.get(`/admin/chats/${conversationId}`);
+  return data; // { conversation, messages }
+}
+
+export async function adminSubmitFeedback(conversationId, rating, comment) {
+  const { data } = await api.post(`/admin/chats/${conversationId}/feedback`, null, { params: { rating, comment } });
+  return data;
+}
+
+export async function adminAnalytics(days = 30) {
+  const { data } = await api.get('/admin/analytics', { params: { days } });
+  return data; // { chats_per_day, topic_distribution }
+}
+
+export async function adminKbStats() {
+  const { data } = await api.get('/admin/kb/stats');
+  return data; // { total_docs, docs_today, docs_week }
+}
+
+export async function adminTopQueries(limit = 5, windowDays = 7) {
+  const { data } = await api.get('/admin/queries/top', { params: { limit, window_days: windowDays } });
+  return data; // { items: [{ query, count }] }
+}
+
+export async function adminRecentMessages(limit = 10, role = 'user') {
+  const { data } = await api.get('/admin/messages/recent', { params: { limit, role } });
+  return data; // { items: [...] }
+}
+
+export async function adminGetSettings() {
+  const { data } = await api.get('/admin/settings');
+  return data; // { config, secrets(masked) }
+}
+
+export async function adminPutSettings(payload) {
+  const { data } = await api.put('/admin/settings', payload);
+  return data; // { ok }
+}
+
+export async function adminTestConnection(service) {
+  const { data } = await api.get('/admin/settings/test', { params: { service } });
+  return data; // { ok, error? }
+}
+
+export async function adminBackupCreate() {
+  const { data } = await api.post('/admin/backup/create');
+  return data; // { dir, collections: {...} }
+}
+
+export async function adminBackupList() {
+  const { data } = await api.get('/admin/backup/list');
+  return data; // { backups: [...] }
+}
+
+export async function adminListFacts(limit = 200) {
+  const { data } = await api.get('/admin/facts', { params: { limit } });
+  return data; // { items }
+}
+
+export async function adminCreateFact(text, tags = []) {
+  const { data } = await api.post('/admin/facts', { text, tags });
+  return data; // { id }
+}
+
+export async function adminUpdateFact(id, updates) {
+  const { data } = await api.put(`/admin/facts/${id}`, updates);
+  return data; // { ok }
+}
+
+export async function adminDeleteFact(id) {
+  const { data } = await api.delete(`/admin/facts/${id}`);
+  return data; // { ok }
+}
+
+export async function adminListUsers(limit = 200) {
+  const { data } = await api.get('/admin/users', { params: { limit } });
+  return data; // { items }
+}
+
+export async function adminCreateUser(username, role) {
+  const { data } = await api.post('/admin/users', { username, role });
+  return data; // { id }
+}
+
+export async function adminUpdateUser(id, updates) {
+  const { data } = await api.put(`/admin/users/${id}`, updates);
+  return data; // { ok }
+}
+
+export async function adminDeleteUser(id) {
+  const { data } = await api.delete(`/admin/users/${id}`);
+  return data; // { ok }
+}
+
+export async function adminListRoles(limit = 200) {
+  const { data } = await api.get('/admin/roles', { params: { limit } });
+  return data; // { items }
+}
+
+export async function adminCreateRole(name, permissions = []) {
+  const { data } = await api.post('/admin/roles', { name, permissions });
+  return data; // { id }
+}
+
+export async function adminUpdateRole(id, updates) {
+  const { data } = await api.put(`/admin/roles/${id}`, updates);
+  return data; // { ok }
+}
+
+export async function adminDeleteRole(id) {
+  const { data } = await api.delete(`/admin/roles/${id}`);
+  return data; // { ok }
+}
+
+export async function adminListAuditLog(limit = 200) {
+  const { data } = await api.get('/admin/audit-log', { params: { limit } });
+  return data; // { items }
+}
+
 export default api;

@@ -126,3 +126,29 @@ html, body, #__taliyo_root, .theme-light *, .theme-dim *, .theme-hc * {
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition: none !important; animation: none !important; }
 }
+
+/* --- Admin UI modern utilities --- */
+.nav-link { @apply relative flex items-center gap-2 px-3 py-2 rounded-lg text-zinc-300 hover:text-white hover:bg-zinc-900 transition-colors; }
+.nav-link-active { @apply bg-zinc-900 text-white border border-zinc-800; }
+.nav-link-active::before { content: ""; position: absolute; left: 0.25rem; top: 0.35rem; bottom: 0.35rem; width: 3px; border-radius: 9999px; background: linear-gradient(180deg, #00B8FF, #FFD25A); }
+
+.card { @apply p-4 md:p-5 rounded-xl border border-zinc-800 bg-zinc-950/60 shadow-glow; }
+.card-title { @apply text-sm mb-2 text-zinc-400; }
+.card-subtitle { @apply text-xs text-zinc-500; }
+
+.input { @apply w-full px-3 py-2 rounded-lg bg-zinc-900 border border-zinc-800 text-sm focus:outline-none focus:ring-1 focus:ring-cyan-400; }
+.textarea { @apply w-full px-3 py-2 rounded-lg bg-zinc-900 border border-zinc-800 text-sm focus:outline-none focus:ring-1 focus:ring-cyan-400; }
+.select { @apply w-full px-3 py-2 rounded-lg bg-zinc-900 border border-zinc-800 text-sm focus:outline-none focus:ring-1 focus:ring-cyan-400; }
+
+.btn { @apply inline-flex items-center justify-center rounded-lg px-3 py-2 text-sm transition-colors; }
+.btn-primary { @apply btn text-black font-medium bg-yellow-500 hover:bg-yellow-400; }
+.btn-secondary { @apply btn bg-zinc-800 hover:bg-zinc-700 text-zinc-100; }
+.btn-danger { @apply btn bg-red-600/80 hover:bg-red-600 text-white; }
+
+.badge { @apply inline-flex items-center rounded-full px-2 py-0.5 text-xs border border-zinc-700 text-zinc-300; }
+.badge-green { @apply border-emerald-700 text-emerald-300; }
+.badge-amber { @apply border-amber-700 text-amber-300; }
+.badge-blue { @apply border-sky-700 text-sky-300; }
+
+.fade-in { animation: fadeIn .25s ease; }
+@keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }

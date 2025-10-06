@@ -64,7 +64,7 @@ async def chat(request: ChatRequest) -> ChatResponse:
         try:
             q = (request.tool_args or {}).get("query", user_message)
             k = int((request.tool_args or {}).get("k", 5))
-            results = search_web(q, k=k, fetch_pages=False)
+            results = await run_in_threadpool(search_web, q, k, False)
             context = "\n\n".join([f"[web {i+1}] {r.get('title','')} - {r.get('url','')}\n{r.get('snippet','')}" for i, r in enumerate(results)])
             user_message = f"Use the following web results if relevant.\n{context}\n\nQuestion: {user_message}"
         except Exception:
@@ -299,7 +299,7 @@ async def vision_summarize(
     user_text = (prompt or "Summarize this image").strip()
     await add_message(conv_id, "user", f"[Image] {display_name} ({mime})\nInstruction: {user_text}")
 
-    summary, model, q_used = summarize_image(data, mime_type=mime, prompt=prompt, quality=quality)
+    summary, model, q_used = await run_in_threadpool(summarize_image, data, mime, prompt, quality)
 
     await add_message(conv_id, "assistant", summary)
     try:
@@ -337,7 +337,7 @@ async def files_ask(
     user_text = (prompt or "Summarize this document").strip()
     await add_message(conv_id, "user", f"[File] {display_name} ({mime})\nQuestion: {user_text}")
 
-    answer, model, q_used = ask_about_file(data, mime_type=mime, prompt=prompt, quality=quality)
+    answer, model, q_used = await run_in_threadpool(ask_about_file, data, mime, prompt, quality)
 
     # Store assistant message and update summary (best-effort)
     await add_message(conv_id, "assistant", answer)
