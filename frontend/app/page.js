@@ -56,6 +56,20 @@ export default function Home() {
   const [ingestInfo, setIngestInfo] = useState(null); // { ok, chunks, doc_id } or { error }
   const [webSearch, setWebSearch] = useState(false);
 
+  // Local cache helpers for resilience when backend restarts or is offline
+  function saveCachedConversations(list) {
+    try { localStorage.setItem("taliyo_conversations", JSON.stringify(list || [])); } catch {}
+  }
+  function loadCachedConversations() {
+    try { return JSON.parse(localStorage.getItem("taliyo_conversations") || "[]"); } catch { return []; }
+  }
+  function saveCachedMessages(id, msgs) {
+    if (!id) return; try { localStorage.setItem(`taliyo_msgs_${id}`, JSON.stringify(msgs || [])); } catch {}
+  }
+  function loadCachedMessages(id) {
+    if (!id) return null; try { return JSON.parse(localStorage.getItem(`taliyo_msgs_${id}`) || "null"); } catch { return null; }
+  }
+
   // Verify auth on load; if unauthorized, redirect to /login
   useEffect(() => {
     let mounted = true;
@@ -453,16 +467,52 @@ export default function Home() {
     return () => el.removeEventListener('scroll', handler);
   }, []);
 
+  // Hydrate from local cache immediately so UI keeps conversations/messages across refresh
+  useEffect(() => {
+    try {
+      const cached = loadCachedConversations();
+      if (Array.isArray(cached) && cached.length) setConversations(cached);
+      const last = localStorage.getItem("taliyo_last_conversation_id");
+      if (last) {
+        const msgs = loadCachedMessages(last);
+        if (Array.isArray(msgs) && msgs.length) {
+          setConversationId(last);
+          setMessages(msgs);
+        }
+      }
+    } catch {}
+  }, []);
+
   useEffect(() => {
     refreshConversations();
   }, []);
 
+  // Persist current conversation + messages and last selection to cache
+  useEffect(() => {
+    if (conversationId) {
+      try { localStorage.setItem("taliyo_last_conversation_id", conversationId); } catch {}
+      saveCachedMessages(conversationId, messages);
+    }
+  }, [conversationId, messages]);
+
   async function refreshConversations() {
     try {
       const list = await apiListConversations();
-      setConversations(list);
+      if (Array.isArray(list) && list.length) {
+        setConversations(list);
+        saveCachedConversations(list);
+      } else {
+        const cached = loadCachedConversations();
+        if (cached && cached.length) {
+          setConversations(cached);
+        } else {
+          setConversations(list);
+        }
+      }
     } catch (e) {
       console.error("Failed to list conversations", e);
+      const cached = loadCachedConversations();
+      if (cached && cached.length) setConversations(cached);
     }
   }
 
@@ -470,10 +520,24 @@ export default function Home() {
     try {
       const conv = await apiGetConversation(id);
       setConversationId(conv.id);
-      setMessages(conv.messages || []);
+      const msgs = Array.isArray(conv.messages) ? conv.messages : [];
+      if (msgs.length) {
+        setMessages(msgs);
+      } else {
+        const cached = loadCachedMessages(id);
+        if (Array.isArray(cached) && cached.length) setMessages(cached); else setMessages([]);
+      }
       setLastMeta(null);
     } catch (e) {
       console.error("Failed to get conversation", e);
+      // Fallback to cached messages if available
+      const cached = loadCachedMessages(id);
+      setConversationId(id);
+      if (Array.isArray(cached) && cached.length) {
+        setMessages(cached);
+      } else {
+        setMessages([]);
+      }
     }
   }
 
@@ -485,6 +549,13 @@ export default function Home() {
         setMessages([]);
       }
       await refreshConversations();
+      // Cleanup local cache
+      try { localStorage.removeItem(`taliyo_msgs_${id}`); } catch {}
+      try {
+        const current = loadCachedConversations();
+        const next = (current || []).filter(c => c.id !== id);
+        saveCachedConversations(next);
+      } catch {}
     } catch (e) {
       console.error("Failed to delete conversation", e);
     }

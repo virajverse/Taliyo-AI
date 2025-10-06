@@ -6,12 +6,92 @@ from typing import List, Optional, Tuple
 from bson import ObjectId
 
 from app.db.mongo import get_db
+from pathlib import Path
+import json
+from app.core.config import settings
 
 # If MongoDB is not reachable (e.g., TLS/network issues), we fall back to an
 # in-memory store so the app keeps working like ChatGPT (no persistence).
 _USE_MEM: bool = False
 _mem_convs: dict[str, dict] = {}
 _mem_msgs: dict[str, list[dict]] = {}
+_STORE_FILE: Path = Path(settings.LOCAL_ARCHIVE_DIR).parent / "chat_store.json"
+
+
+def _switch_to_mem() -> None:
+    global _USE_MEM
+    if not _USE_MEM:
+        _USE_MEM = True
+        _load_store()
+
+
+def _load_store() -> None:
+    global _mem_convs, _mem_msgs
+    try:
+        if _STORE_FILE.exists():
+            data = json.loads(_STORE_FILE.read_text(encoding="utf-8"))
+            convs = data.get("convs", {}) or {}
+            msgs = data.get("msgs", {}) or {}
+            # restore datetimes
+            def _parse_dt(x):
+                try:
+                    if isinstance(x, str):
+                        return datetime.fromisoformat(x.replace("Z", "+00:00"))
+                except Exception:
+                    pass
+                return _now()
+            _mem_convs = {}
+            for cid, c in convs.items():
+                c2 = dict(c)
+                if "created_at" in c2: c2["created_at"] = _parse_dt(c2["created_at"])
+                if "updated_at" in c2: c2["updated_at"] = _parse_dt(c2["updated_at"])
+                if "deleted_at" in c2: c2["deleted_at"] = _parse_dt(c2["deleted_at"])
+                c2["id"] = cid
+                _mem_convs[cid] = c2
+            _mem_msgs = {}
+            for cid, arr in msgs.items():
+                new_arr = []
+                for m in arr or []:
+                    m2 = dict(m)
+                    if "created_at" in m2:
+                        m2["created_at"] = _parse_dt(m2["created_at"])
+                    new_arr.append(m2)
+                _mem_msgs[cid] = new_arr
+    except Exception:
+        # ignore corrupt store
+        _mem_convs, _mem_msgs = {}, {}
+
+
+def _save_store() -> None:
+    try:
+        _STORE_FILE.parent.mkdir(parents=True, exist_ok=True)
+        def _to_iso(dt):
+            try:
+                if isinstance(dt, datetime):
+                    return dt.isoformat() + "Z"
+            except Exception:
+                pass
+            return dt
+        convs = {}
+        for cid, c in _mem_convs.items():
+            c2 = dict(c)
+            for k in ("created_at", "updated_at", "deleted_at"):
+                if k in c2:
+                    c2[k] = _to_iso(c2[k])
+            convs[cid] = c2
+        msgs = {}
+        for cid, arr in _mem_msgs.items():
+            new_arr = []
+            for m in arr:
+                m2 = dict(m)
+                if "created_at" in m2:
+                    m2["created_at"] = _to_iso(m2["created_at"])
+                new_arr.append(m2)
+            msgs[cid] = new_arr
+        snap = {"convs": convs, "msgs": msgs}
+        _STORE_FILE.write_text(json.dumps(snap, ensure_ascii=False), encoding="utf-8")
+    except Exception:
+        pass
 
 
 def _obj_id(id_str: str) -> ObjectId:
@@ -44,7 +124,7 @@ async def init_indexes() -> None:
         await db.messages.create_index("conversation_id")
         await db.messages.create_index([("conversation_id", 1), ("created_at", 1)])
     except Exception:
-        _USE_MEM = True
+        _switch_to_mem()
 
 
 async def ensure_conversation(conversation_id: Optional[str], title_seed: str, user_key: Optional[str] = None) -> str:
@@ -67,7 +147,7 @@ async def ensure_conversation(conversation_id: Optional[str], title_seed: str, u
             result = await db.conversations.insert_one(doc)
             return str(result.inserted_id)
         except Exception:
-            _USE_MEM = True
+            _switch_to_mem()
     # memory fallback
     if conversation_id and conversation_id in _mem_convs:
         return conversation_id
@@ -80,6 +160,7 @@ async def ensure_conversation(conversation_id: Optional[str], title_seed: str, u
         "updated_at": _now(),
     }
     _mem_msgs[new_id] = []
+    _save_store()
     return new_id
 
 
@@ -99,7 +180,7 @@ async def add_message(conversation_id: str, role: str, content: str) -> None:
             await db.conversations.update_one({"_id": oid}, {"$set": {"updated_at": _now()}})
             return
         except Exception:
-            _USE_MEM = True
+            _switch_to_mem()
     # memory fallback
     conv = _mem_convs.get(conversation_id)
     if not conv:
@@ -110,6 +191,7 @@ async def add_message(conversation_id: str, role: str, content: str) -> None:
         "created_at": _now(),
     })
     conv["updated_at"] = _now()
+    _save_store()
 
 
 async def list_conversations() -> List[dict]:
@@ -123,7 +205,7 @@ async def list_conversations() -> List[dict]:
                 items.append({"id": str(d["_id"]), "title": d.get("title", "Untitled"), "updated_at": d.get("updated_at")})
             return items
         except Exception:
-            _USE_MEM = True
+            _switch_to_mem()
     # memory fallback
     items = []
     for cid, conv in _mem_convs.items():
@@ -160,7 +242,7 @@ async def get_conversation(conversation_id: str) -> Tuple[dict, List[dict]]:
             }
             return conv_doc, msgs
         except Exception:
-            _USE_MEM = True
+            _switch_to_mem()
     # memory fallback
     conv = _mem_convs.get(conversation_id)
     if not conv or conv.get("deleted_at"):
@@ -185,8 +267,9 @@ async def delete_conversation(conversation_id: str) -> None:
             await db.conversations.update_one({"_id": oid}, {"$set": {"deleted_at": _now()}})
             return
         except Exception:
-            _USE_MEM = True
+            _switch_to_mem()
     # memory fallback
     conv = _mem_convs.get(conversation_id)
     if conv:
         conv["deleted_at"] = _now()
+        _save_store()
