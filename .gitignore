@@ -22,3 +22,46 @@ Thumbs.db
 
 # General env
 .env
+
+# OS
+.DS_Store
+Thumbs.db
+
+# General env
+.env
+.env.*
+.envrc
+*.env
+*.env.*
+!.env.example
+frontend/.env
+frontend/.env.*
+!frontend/.env.example
+backend/.env.*
+backend/.env.local
+!backend/.env.example
+
+# Secrets & credentials
+*.pem
+*.key
+*.p12
+*.pfx
+*.cer
+*.crt
+service-account.json
+serviceAccountKey.json
+credentials*.json
+client_secret*.json
+firebase-credentials*.json
+
+# Local tool auth files
+.npmrc
+frontend/.npmrc
+backend/.pypirc
+
+# IDE & project settings (may contain tokens)
+.vscode/
+.idea/
+
+# Deployment metadata
+.vercel/
